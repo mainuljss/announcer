@@ -8,108 +8,111 @@
 </head>
 <body>
 
-    <script>
-        const COORDINATES = {
-            dhaka: [23.8103, 90.4125],
-            mymensingh: [24.7471, 90.4203],
-            bauphal: [22.3867, 90.5283],
-            barisal: [22.7010, 90.3535]
-        };
+<script>
+    const COORDINATES = {
+        dhaka: [23.8103, 90.4125],
+        mymensingh: [24.7471, 90.4203],
+        bauphal: [22.3867, 90.5283],
+        barisal: [22.7010, 90.3535]
+    };
 
-        // No need to declare 'prayTimes' again, just use the global object
-        const prayerNameBn = {
-            fajr: "ফজরের",
-            sunrise: "সূর্যোদয়ের",
-            dhuhr: "যোহরের",
-            asr: "আসরের",
-            maghrib: "মাগরিবের",
-            isha: "ঈশার"
-        };
+    const prayerNameBn = {
+        fajr: "ফজরের",
+        sunrise: "সূর্যোদয়ের",
+        dhuhr: "যোহরের",
+        asr: "আসরের",
+        maghrib: "মাগরিবের",
+        isha: "ঈশার"
+    };
 
-        // Time periods (for announcing time of the day in Bengali)
-        const timePeriods = [
-            { label: "রাত", start: 20, end: 24 },
-            { label: "রাত", start: 0, end: 4 },
-            { label: "ভোর", start: 4, end: 6 },
-            { label: "সকাল", start: 6, end: 12 },
-            { label: "দুপুর", start: 12, end: 16 },
-            { label: "বিকাল", start: 16, end: 18 },
-            { label: "সন্ধ্যা", start: 18, end: 20 }
-        ];
+    const timePeriods = [
+        { label: "রাত", start: 20, end: 24 },
+        { label: "রাত", start: 0, end: 4 },
+        { label: "ভোর", start: 4, end: 6 },
+        { label: "সকাল", start: 6, end: 12 },
+        { label: "দুপুর", start: 12, end: 16 },
+        { label: "বিকাল", start: 16, end: 18 },
+        { label: "সন্ধ্যা", start: 18, end: 20 }
+    ];
 
-        // Helper to get time period
-        const getTimePeriod = (hour) => {
-            for (const period of timePeriods) {
-                if (hour >= period.start && hour < period.end) {
-                    return period.label;
-                }
+    const getTimePeriod = (hour) => {
+        for (const period of timePeriods) {
+            if (hour >= period.start && hour < period.end) {
+                return period.label;
             }
-            return "সময়";
-        };
+        }
+        return "সময়";
+    };
 
-        // Helper to convert digits to Bengali
-        const convertToBengali = (num) => {
-            const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
-            return num.toString().split('').map(d => banglaDigits[+d]).join('');
-        };
+    const convertToBengali = (num) => {
+        const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+        return num.toString().split('').map(d => banglaDigits[+d]).join('');
+    };
 
-        // Function to calculate the next prayer based on the current time
-        const getNextPrayer = (times, currentTime) => {
-            const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-            for (let prayer of prayers) {
-                const [h, m] = times[prayer].split(':').map(Number);
-                const prayerTime = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), h, m);
-                if (prayerTime > currentTime) {
-                    return { prayer, prayerTime };
-                }
+    const getNextPrayer = (times, currentTime) => {
+        const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+        for (let prayer of prayers) {
+            const [h, m] = times[prayer].split(':').map(Number);
+            const prayerTime = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), h, m);
+            if (prayerTime > currentTime) {
+                return { prayer, prayerTime };
             }
-            return { prayer: 'fajr', prayerTime: new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate() + 1, 5, 0) }; // Fajr next day
-        };
+        }
+        return { prayer: 'fajr', prayerTime: new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate() + 1, 5, 0) };
+    };
 
-        // Main function to generate the announcement text
-        const generateAnnouncement = (date) => {
-            const lat = COORDINATES.mymensingh[0];
-            const lon = COORDINATES.mymensingh[1];
-            const timezone = new Date().getTimezoneOffset() / -60;
+    const getDateFromQuery = () => {
+        const params = new URLSearchParams(window.location.search);
+        const h = parseInt(params.get("hour"));
+        const m = parseInt(params.get("minute"));
 
-            const times = prayTimes.getTimes(date, [lat, lon], timezone);
-            const currentHour = date.getHours();
-            const currentMinutes = date.getMinutes();
+        if (!isNaN(h) && !isNaN(m) && h >= 0 && h < 24 && m >= 0 && m < 60) {
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+        }
+        return new Date(); // fallback to current time
+    };
 
-            const nextPrayerData = getNextPrayer(times, date);
-            const nextPrayer = nextPrayerData.prayer;
-            const nextPrayerTime = nextPrayerData.prayerTime;
+    const generateAnnouncement = (date) => {
+        const lat = COORDINATES.mymensingh[0];
+        const lon = COORDINATES.mymensingh[1];
+        const timezone = new Date().getTimezoneOffset() / -60;
 
-            const [h, m] = nextPrayerTime.toTimeString().split(':').map(Number);
-            const nextDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m);
+        const times = prayTimes.getTimes(date, [lat, lon], timezone);
+        const currentHour = date.getHours();
+        const currentMinutes = date.getMinutes();
 
-            const period = getTimePeriod(currentHour);
-            const bHour = convertToBengali(currentHour % 12 || 12);
-            const bMinute = convertToBengali(currentMinutes.toString().padStart(2, '0'));
+        const nextPrayerData = getNextPrayer(times, date);
+        const nextPrayer = nextPrayerData.prayer;
+        const nextPrayerTime = nextPrayerData.prayerTime;
 
-            let announcement = `এখন সময়, ${period}, ${bHour}টা বেজে, ${bMinute} মিনিট।`;
+        const [h, m] = nextPrayerTime.toTimeString().split(':').map(Number);
+        const nextDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m);
 
-            // Only announce prayer time between Fajr and Isha
-            const afterFajr = date >= new Date(date.getFullYear(), date.getMonth(), date.getDate(), ...times.fajr.split(':').map(Number));
-            const beforeIsha = date < new Date(date.getFullYear(), date.getMonth(), date.getDate(), ...times.isha.split(':').map(Number));
+        const period = getTimePeriod(currentHour);
+        const bHour = convertToBengali(currentHour % 12 || 12);
+        const bMinute = convertToBengali(currentMinutes.toString().padStart(2, '0'));
 
-            if (afterFajr && beforeIsha && prayerNameBn[nextPrayer]) {
-                const prayerPeriod = getTimePeriod(h);
-                const bNextHour = convertToBengali(h % 12 || 12);
-                const bPrayerMinute = convertToBengali(m.toString().padStart(2, '0'));
-                announcement += ` ${prayerNameBn[nextPrayer]} শেষ সময়, ${prayerPeriod}, ${bNextHour}টা বেজে, ${bPrayerMinute} মিনিট।`;
-            }
+        let announcement = `এখন সময়, ${period}, ${bHour}টা বেজে, ${bMinute} মিনিট।`;
 
-            return announcement;
-        };
+        const afterFajr = date >= new Date(date.getFullYear(), date.getMonth(), date.getDate(), ...times.fajr.split(':').map(Number));
+        const beforeIsha = date < new Date(date.getFullYear(), date.getMonth(), date.getDate(), ...times.isha.split(':').map(Number));
 
-        // Get current date and generate the announcement text for the current minute
-        const date = new Date();
-        const announcement = generateAnnouncement(date);
+        if (afterFajr && beforeIsha && prayerNameBn[nextPrayer]) {
+            const prayerPeriod = getTimePeriod(h);
+            const bNextHour = convertToBengali(h % 12 || 12);
+            const bPrayerMinute = convertToBengali(m.toString().padStart(2, '0'));
+            announcement += ` ${prayerNameBn[nextPrayer]} শেষ সময়, ${prayerPeriod}, ${bNextHour}টা বেজে, ${bPrayerMinute} মিনিট।`;
+        }
 
-        // Return the plain string without any HTML
-        document.write(announcement);
-    </script>
+        return announcement;
+    };
+
+    const date = getDateFromQuery();
+    const announcement = generateAnnouncement(date);
+
+    document.write(announcement);
+</script>
 
 </body>
 </html>
