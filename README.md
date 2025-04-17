@@ -19,7 +19,7 @@ A web-based Bengali time and prayer announcer that provides real-time announceme
 ## Quick Preview
 
 View the live announcer here:
-[Time Announcer Preview](https://htmlpreview.github.io/?https://github.com/mainuljss/announcer/blob/main/time.html)
+[Time Announcer Preview](https://mainuljss.github.io/announcer/time.html)
 
 ## Setup
 
